@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aventura de Palabras - 1° y 2° Básico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Fredoka', 'Nunito', sans-serif;
+            background: linear-gradient(180deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
+
+        /* Nubes flotantes animadas en el fondo */
+        .bg-cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 50px;
+            pointer-events: none;
+            animation: floatCloud 22s linear infinite;
+        }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(-150px); }
+            100% { transform: translateX(100vw); }
+        }
+
+        /* Botones estilo 3D táctiles infantiles */
+        .btn-3d {
+            transition: all 0.12s ease-out;
+            border-bottom-width: 6px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+            touch-action: manipulation;
+        }
+
+        .btn-3d:active {
+            transform: translateY(4px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Animaciones interactivas */
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-6deg); }
+            75% { transform: rotate(6deg); }
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            80% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shakeWrong {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .animate-bounce-slow { animation: bounceSlow 2.5s ease-in-out infinite; }
+        .animate-wiggle { animation: wiggle 1.2s ease-in-out infinite; }
+        .pop-in { animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .shake-wrong { animation: shakeWrong 0.4s ease-in-out; }
+
+        /* Canvas para fuegos artificiales/confetti */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 60;
+        }
+
+        /* Burbuja de habla de Bubu */
+        .speech-bubble {
+            position: relative;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 4px solid #f3f4f6;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -14px;
+            left: 28px;
+            border-width: 14px 12px 0;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-3 sm:p-5 min-h-screen relative overflow-hidden">
+
+    <!-- Nubes decorativas de fondo -->
+    <div class="bg-cloud w-32 h-12 top-6 -left-10" style="animation-duration: 28s;"></div>
+    <div class="bg-cloud w-48 h-16 top-24 -left-20" style="animation-duration: 35s; animation-delay: -10s;"></div>
+    <div class="bg-cloud w-40 h-14 top-2/3 -left-16" style="animation-duration: 30s; animation-delay: -18s;"></div>
+
+    <!-- Canvas para animación de celebración -->
+    <canvas id="confetti-canvas" class="hidden"></canvas>
+
+    <main class="w-full max-w-md bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-2xl overflow-hidden relative border-8 border-yellow-300 z-10 my-auto">
+        
+        <!-- ==================== PANTALLA DE INICIO ==================== -->
+        <div id="start-screen" class="p-5 sm:p-6 text-center flex flex-col items-center justify-between min-h-[530px]">
+            
+            <!-- Encabezado Infantil -->
+            <div class="pt-1">
+                <span class="bg-yellow-300 text-yellow-950 font-black text-xs uppercase px-4 py-1.5 rounded-full shadow-sm tracking-wider">
+                    🌟 1° y 2° Básico 🌟
+                </span>
+                <h1 class="text-3xl sm:text-4xl font-black text-sky-600 mt-2 leading-tight drop-shadow-sm">
+                    Aventura de<br><span class="text-pink-500 text-4xl sm:text-5xl">Palabras</span>
+                </h1>
+            </div>
+
+            <!-- Mascota Bubu el Búho -->
+            <div class="my-2 flex flex-col items-center animate-bounce-slow">
+                <div class="speech-bubble p-3 px-4 mb-2 max-w-[250px]">
+                    <p class="text-sm font-bold text-gray-700 leading-snug">
+                        ¡Hola! Soy <span class="text-sky-600 font-extrabold">Bubu</span> 🦉 <br>¡Tenemos 5 juegos geniales!
+                    </p>
+                </div>
+                <!-- SVG de la Mascota Bubu -->
+                <svg id="mascot-start" class="w-28 h-28 drop-shadow-md" viewBox="0 0 200 200" fill="none">
+                    <ellipse cx="100" cy="110" rx="65" ry="70" fill="#a855f7" />
+                    <ellipse cx="100" cy="118" rx="45" ry="50" fill="#fef08a" />
+                    <circle cx="75" cy="85" r="24" fill="white" />
+                    <circle cx="125" cy="85" r="24" fill="white" />
+                    <circle cx="80" cy="85" r="13" fill="#1e1b4b" />
+                    <circle cx="120" cy="85" r="13" fill="#1e1b4b" />
+                    <circle cx="83" cy="81" r="5" fill="white" />
+                    <circle cx="123" cy="81" r="5" fill="white" />
+                    <polygon points="100,95 90,110 110,110" fill="#f97316" />
+                    <ellipse cx="58" cy="102" rx="10" ry="6" fill="#f43f5e" opacity="0.6" />
+                    <ellipse cx="142" cy="102" rx="10" ry="6" fill="#f43f5e" opacity="0.6" />
+                    <ellipse cx="80" cy="180" rx="12" ry="6" fill="#f97316" />
+                    <ellipse cx="120" cy="180" rx="12" ry="6" fill="#f97316" />
+                </svg>
+            </div>
+
+            <!-- Resumen de Actividades (Las 5 categorías) -->
+            <div class="grid grid-cols-5 gap-1.5 w-full bg-sky-50 p-2.5 rounded-2xl border-2 border-sky-100 mb-2">
+                <div class="flex flex-col items-center">
+                    <span class="text-xl">🔤</span>
+                    <span class="text-[10px] font-black text-sky-800">Letras</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xl">👀</span>
+                    <span class="text-[10px] font-black text-emerald-800">Palabras</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xl">🔢</span>
+                    <span class="text-[10px] font-black text-amber-800">Oración</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xl">👏</span>
+                    <span class="text-[10px] font-black text-rose-800">Sílabas</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xl">🗣️</span>
+                    <span class="text-[10px] font-black text-purple-800">Sonidos</span>
+                </div>
+            </div>
+
+            <!-- Botón Jugar Grande Infantil -->
+            <button onclick="startGame()" class="btn-3d w-full py-4 rounded-2xl bg-amber-400 border-amber-600 text-amber-950 font-black text-2xl hover:bg-amber-300 flex items-center justify-center space-x-2">
+                <span>¡JUGAR AHORA!</span>
+                <span class="text-3xl">🚀</span>
+            </button>
+        </div>
+
+        <!-- ==================== PANTALLA DE JUEGO ==================== -->
+        <div id="game-screen" class="hidden flex flex-col min-h-[530px] justify-between">
+            
+            <!-- Header: Barra de progreso y contador de Estrellas -->
+            <header class="bg-amber-100/70 p-3.5 border-b-4 border-amber-200 flex items-center justify-between">
+                <!-- Barra de progreso -->
+                <div class="flex-1 mr-3 relative">
+                    <div class="flex justify-between text-xs font-black text-amber-900 mb-1">
+                        <span id="level-indicator">Reto 1 de 30</span>
+                        <span>¡Sigue así! 🌈</span>
+                    </div>
+                    <div class="w-full bg-amber-200 rounded-full h-4 p-0.5 shadow-inner relative overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-400 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Contador de Estrellas -->
+                <div class="bg-white px-3 py-1.5 rounded-2xl border-2 border-amber-300 text-amber-600 font-black flex items-center shadow-sm">
+                    <span class="text-xl mr-1">⭐</span>
+                    <span id="score" class="text-xl">0</span>
+                </div>
+            </header>
+
+            <!-- Contenedor Interactivo del Desafío -->
+            <div id="challenge-container" class="p-4 flex-1 flex flex-col justify-between items-center text-center">
+                
+                <!-- Tag de Categoría Pedagógica -->
+                <div id="category-badge" class="px-4 py-1.5 rounded-full text-xs font-black shadow-sm flex items-center space-x-1.5">
+                    <span id="category-icon">🔤</span>
+                    <span id="category-text">Categoría</span>
+                </div>
+
+                <!-- Instrucción sencilla para niños -->
+                <div class="flex items-center justify-center my-2">
+                    <h2 id="instruction" class="text-xl sm:text-2xl font-black text-gray-800 leading-snug">
+                        Instrucción sencilla
+                    </h2>
+                </div>
+
+                <!-- Caja del Texto Principal -->
+                <div id="main-text-box" class="w-full my-auto min-h-[110px] bg-sky-50 border-4 border-sky-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative">
+                    <span id="main-text" class="text-3xl sm:text-4xl font-black text-gray-800 tracking-wide">
+                        Texto
+                    </span>
+                </div>
+
+                <!-- Opciones Interactivas -->
+                <div id="options-grid" class="grid grid-cols-3 gap-3 w-full max-w-xs mt-3">
+                    <!-- Botones generados dinámicamente -->
+                </div>
+
+            </div>
+
+            <!-- Modal Feedback de Respuesta -->
+            <div id="feedback-overlay" class="absolute inset-0 bg-white/95 backdrop-blur-md hidden flex-col items-center justify-center z-30 p-6">
+                
+                <div id="feedback-mascot" class="w-28 h-28 mb-2">
+                    <!-- SVG de Bubu inyectado dinámicamente -->
+                </div>
+
+                <h2 id="feedback-text" class="text-3xl font-black mb-2 text-center">
+                    ¡Excelente!
+                </h2>
+                
+                <p id="feedback-subtext" class="text-base font-bold text-gray-500 mb-6 text-center">
+                    ¡Ganaste una estrella! ⭐
+                </p>
+
+                <button id="next-btn" onclick="nextChallenge()" class="btn-3d px-8 py-3.5 rounded-2xl font-black text-xl text-white shadow-lg bg-emerald-500 border-emerald-700 hover:bg-emerald-400">
+                    Siguiente ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== PANTALLA FINAL ==================== -->
+        <div id="end-screen" class="hidden p-6 text-center flex flex-col items-center justify-between min-h-[500px]">
+            
+            <div class="pt-2 animate-wiggle">
+                <div class="text-6xl mb-1">🏆</div>
+                <h1 class="text-3xl font-black text-amber-500">¡SUPER LECTOR!</h1>
+                <p class="text-gray-600 font-bold text-sm">Completaste los 30 desafíos</p>
+            </div>
+
+            <!-- Bubu Celebrando -->
+            <div class="my-2 flex flex-col items-center">
+                <div class="speech-bubble p-3 px-4 mb-2 max-w-[250px]">
+                    <p class="text-sm font-bold text-gray-700">
+                        ¡Eres increíble! 🎉 <br>¡Aprendiste mucho hoy!
+                    </p>
+                </div>
+                <svg class="w-28 h-28" viewBox="0 0 200 200">
+                    <ellipse cx="100" cy="110" rx="65" ry="70" fill="#a855f7" />
+                    <ellipse cx="100" cy="118" rx="45" ry="50" fill="#fef08a" />
+                    <circle cx="75" cy="85" r="24" fill="white" />
+                    <circle cx="125" cy="85" r="24" fill="white" />
+                    <circle cx="80" cy="85" r="13" fill="#1e1b4b" />
+                    <circle cx="120" cy="85" r="13" fill="#1e1b4b" />
+                    <polygon points="80,78 82,82 86,82 83,85 84,89 80,86 76,89 77,85 74,82 78,82" fill="yellow" />
+                    <polygon points="120,78 122,82 126,82 123,85 124,89 120,86 116,89 117,85 114,82 118,82" fill="yellow" />
+                    <polygon points="100,95 90,110 110,110" fill="#f97316" />
+                </svg>
+            </div>
+
+            <!-- Resumen de Puntuación -->
+            <div class="bg-amber-100 p-4 rounded-3xl border-4 border-amber-300 w-full max-w-xs">
+                <p class="text-xs font-black uppercase text-amber-800">Estrellas Acumuladas</p>
+                <p id="final-score" class="text-4xl font-black text-amber-600">30 / 30 ⭐</p>
+            </div>
+
+            <button onclick="resetGame()" class="btn-3d w-full py-4 rounded-2xl bg-sky-500 border-sky-700 text-white font-black text-xl hover:bg-sky-400">
+                🔄 JUGAR DE NUEVO
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        function playSound(type) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                const now = ctx.currentTime;
+
+                if (type === 'correct') {
+                    // Melodía alegre ascendente
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // Do
+                    osc.frequency.setValueAtTime(659.25, now + 0.08); // Mi
+                    osc.frequency.setValueAtTime(783.99, now + 0.16); // Sol
+                    osc.frequency.setValueAtTime(1046.50, now + 0.24); // Do alto
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else if (type === 'wrong') {
+                    // Tono suave de intento
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(260, now);
+                    osc.frequency.setValueAtTime(200, now + 0.12);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'tap') {
+                    // Pop táctil
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(450, now);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                }
+            } catch (e) {
+                // Audio no soportado
+            }
+        }
+
+        // 30 Desafíos pedagógicos intercalados entre las 5 categorías:
+        // 1. Letras (Mayúsculas y Minúsculas)
+        // 2. Palabras (Reales vs Inventadas)
+        // 3. Oración (Conteo de Palabras)
+        // 4. Sílabas (Conteo de Sílabas)
+        // 5. Sonidos (Conteo de Fonemas)
+        const challenges = [
+            // Bloque 1
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'M', options: ['m', 'n', 'w'], answer: 'm' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'sol', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'REAL 🌟' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'La casa roja', options: ['2', '3', '4'], answer: '3' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'pato', options: ['1', '2', '3'], answer: '2' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'paz', options: ['2', '3', '4'], answer: '3' },
+
+            // Bloque 2
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'P', options: ['q', 'p', 'd'], answer: 'p' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'buko', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'INVENTADA 👾' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'El pez nada', options: ['2', '3', '4'], answer: '3' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'sol', options: ['1', '2', '3'], answer: '1' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'mar', options: ['2', '3', '4'], answer: '3' },
+
+            // Bloque 3
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'L', options: ['l', 'i', 't'], answer: 'l' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'mesa', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'REAL 🌟' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'Yo veo un oso', options: ['3', '4', '5'], answer: '4' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'pelota', options: ['2', '3', '4'], answer: '3' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'sol', options: ['2', '3', '4'], answer: '3' },
+
+            // Bloque 4
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'B', options: ['d', 'b', 'p'], answer: 'b' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'zifa', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'INVENTADA 👾' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'Mamá me ama', options: ['2', '3', '4'], answer: '3' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'mariposa', options: ['3', '4', '5'], answer: '4' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'gato', options: ['3', '4', '5'], answer: '4' },
+
+            // Bloque 5
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'D', options: ['d', 'b', 'q'], answer: 'd' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'luna', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'REAL 🌟' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'El cielo es azul', options: ['3', '4', '5'], answer: '4' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'casa', options: ['1', '2', '3'], answer: '2' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'luna', options: ['3', '4', '5'], answer: '4' },
+
+            // Bloque 6
+            { type: 'case',      instr: '¿Cuál es la minúscula de:', text: 'F', options: ['f', 't', 'l'], answer: 'f' },
+            { type: 'real',      instr: '¿Es una palabra REAL o INVENTADA?', text: 'mupo', options: ['REAL 🌟', 'INVENTADA 👾'], answer: 'INVENTADA 👾' },
+            { type: 'count',     instr: '¿Cuántas palabras hay?', text: 'Mi gato es gris', options: ['3', '4', '5'], answer: '4' },
+            { type: 'syllables', instr: '¿Cuántas sílabas tiene?', text: 'camino', options: ['2', '3', '4'], answer: '3' },
+            { type: 'sounds',    instr: '¿Cuántos sonidos escuchas?', text: 'flor', options: ['3', '4', '5'], answer: '4' }
+        ];
+
+        let currentChallengeIndex = 0;
+        let score = 0;
+        const totalChallenges = challenges.length;
+
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+
+        const uiLevel = document.getElementById('level-indicator');
+        const uiProgressBar = document.getElementById('progress-bar');
+        const uiScore = document.getElementById('score');
+
+        const uiBadge = document.getElementById('category-badge');
+        const uiCategoryIcon = document.getElementById('category-icon');
+        const uiCategoryText = document.getElementById('category-text');
+        const uiInstruction = document.getElementById('instruction');
+        const uiMainTextBox = document.getElementById('main-text-box');
+        const uiMainText = document.getElementById('main-text');
+        const uiOptionsGrid = document.getElementById('options-grid');
+
+        const feedbackOverlay = document.getElementById('feedback-overlay');
+        const feedbackMascot = document.getElementById('feedback-mascot');
+        const feedbackText = document.getElementById('feedback-text');
+        const feedbackSubtext = document.getElementById('feedback-subtext');
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            let cur = arr.length, rand;
+            while (cur !== 0) {
+                rand = Math.floor(Math.random() * cur);
+                cur--;
+                [arr[cur], arr[rand]] = [arr[rand], arr[cur]];
+            }
+            return arr;
+        }
+
+        function startGame() {
+            playSound('tap');
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+
+            currentChallengeIndex = 0;
+            score = 0;
+            updateScore();
+            loadChallenge();
+        }
+
+        function loadChallenge() {
+            const current = challenges[currentChallengeIndex];
+
+            // Progreso del reto
+            uiLevel.innerText = `Reto ${currentChallengeIndex + 1} de ${totalChallenges}`;
+            const progressPercent = (currentChallengeIndex / totalChallenges) * 100;
+            uiProgressBar.style.width = `${progressPercent}%`;
+
+            // Ocultar modal de feedback
+            feedbackOverlay.classList.add('hidden');
+            feedbackOverlay.classList.remove('flex');
+
+            // Animación pop al cargar
+            const container = document.getElementById('challenge-container');
+            container.classList.remove('pop-in');
+            void container.offsetWidth;
+            container.classList.add('pop-in');
+
+            uiInstruction.innerText = current.instr;
+
+            // Configurar estilos según la categoría pedagógica
+            if (current.type === 'case') {
+                uiBadge.className = 'px-4 py-1.5 rounded-full text-xs font-black bg-blue-100 text-blue-800 border-2 border-blue-200';
+                uiCategoryIcon.innerText = '🔤';
+                uiCategoryText.innerText = 'Mayúsculas y Minúsculas';
+                
+                uiMainTextBox.className = 'w-full my-auto min-h-[110px] bg-blue-50 border-4 border-blue-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative';
+                uiMainText.innerText = current.text;
+
+            } else if (current.type === 'real') {
+                uiBadge.className = 'px-4 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border-2 border-emerald-200';
+                uiCategoryIcon.innerText = '👀';
+                uiCategoryText.innerText = 'Palabra Real o Inventada';
+                
+                uiMainTextBox.className = 'w-full my-auto min-h-[110px] bg-emerald-50 border-4 border-emerald-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative';
+                uiMainText.innerText = `"${current.text}"`;
+
+            } else if (current.type === 'count') {
+                uiBadge.className = 'px-4 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-800 border-2 border-amber-200';
+                uiCategoryIcon.innerText = '🔢';
+                uiCategoryText.innerText = 'Conteo de Palabras';
+                
+                uiMainTextBox.className = 'w-full my-auto min-h-[110px] bg-amber-50 border-4 border-amber-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative';
+                uiMainText.innerText = current.text;
+
+            } else if (current.type === 'syllables') {
+                uiBadge.className = 'px-4 py-1.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border-2 border-rose-200';
+                uiCategoryIcon.innerText = '👏';
+                uiCategoryText.innerText = 'Conteo de Sílabas';
+                
+                uiMainTextBox.className = 'w-full my-auto min-h-[110px] bg-rose-50 border-4 border-rose-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative';
+                uiMainText.innerText = current.text;
+
+            } else if (current.type === 'sounds') {
+                uiBadge.className = 'px-4 py-1.5 rounded-full text-xs font-black bg-purple-100 text-purple-800 border-2 border-purple-200';
+                uiCategoryIcon.innerText = '🗣️';
+                uiCategoryText.innerText = 'Conteo de Sonidos';
+                
+                uiMainTextBox.className = 'w-full my-auto min-h-[110px] bg-purple-50 border-4 border-purple-200 rounded-3xl p-4 flex items-center justify-center shadow-inner relative';
+                uiMainText.innerText = current.text;
+            }
+
+            // Generar botones de respuestas
+            uiOptionsGrid.innerHTML = '';
+            
+            // Adaptar rejilla según la cantidad de opciones (2 para Reales/Inventadas, 3 para el resto)
+            if (current.options.length === 2) {
+                uiOptionsGrid.className = 'grid grid-cols-2 gap-3 w-full max-w-xs mt-3';
+            } else {
+                uiOptionsGrid.className = 'grid grid-cols-3 gap-3 w-full max-w-xs mt-3';
+            }
+
+            const shuffledOptions = shuffleArray(current.options);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-3d py-4 px-2 rounded-2xl text-lg sm:text-2xl font-black bg-white border-sky-300 text-sky-700 hover:bg-sky-50 shadow-md flex items-center justify-center text-center';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                uiOptionsGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedOption, buttonElement) {
+            const current = challenges[currentChallengeIndex];
+            const isCorrect = (selectedOption === current.answer);
+
+            if (isCorrect) {
+                playSound('correct');
+                score++;
+                updateScore();
+                showFeedback(true);
+            } else {
+                playSound('wrong');
+                buttonElement.classList.add('shake-wrong', 'bg-rose-100', 'border-rose-400', 'text-rose-600');
+                setTimeout(() => {
+                    buttonElement.classList.remove('shake-wrong');
+                    showFeedback(false);
+                }, 400);
+            }
+        }
+
+        function showFeedback(isCorrect) {
+            feedbackOverlay.classList.remove('hidden');
+            feedbackOverlay.classList.add('flex');
+
+            if (isCorrect) {
+                feedbackText.className = 'text-3xl sm:text-4xl font-black mb-1 text-emerald-600';
+                feedbackText.innerText = '¡EXCELENTE! ⭐';
+                feedbackSubtext.innerText = '¡Respuesta correcta!';
+                
+                feedbackMascot.innerHTML = `
+                    <svg class="w-28 h-28 mx-auto" viewBox="0 0 200 200">
+                        <ellipse cx="100" cy="110" rx="65" ry="70" fill="#a855f7" />
+                        <ellipse cx="100" cy="118" rx="45" ry="50" fill="#fef08a" />
+                        <circle cx="75" cy="85" r="24" fill="white" />
+                        <circle cx="125" cy="85" r="24" fill="white" />
+                        <circle cx="80" cy="85" r="13" fill="#1e1b4b" />
+                        <circle cx="120" cy="85" r="13" fill="#1e1b4b" />
+                        <circle cx="83" cy="81" r="5" fill="white" />
+                        <circle cx="123" cy="81" r="5" fill="white" />
+                        <path d="M 65 112 Q 100 135 135 112" stroke="#f97316" stroke-width="8" stroke-linecap="round" fill="none"/>
+                    </svg>
+                `;
+            } else {
+                const current = challenges[currentChallengeIndex];
+                feedbackText.className = 'text-3xl sm:text-4xl font-black mb-1 text-amber-600';
+                feedbackText.innerText = '¡CASI CASI! 💪';
+                feedbackSubtext.innerText = `La respuesta correcta era: "${current.answer}"`;
+
+                feedbackMascot.innerHTML = `
+                    <svg class="w-28 h-28 mx-auto" viewBox="0 0 200 200">
+                        <ellipse cx="100" cy="110" rx="65" ry="70" fill="#a855f7" />
+                        <ellipse cx="100" cy="118" rx="45" ry="50" fill="#fef08a" />
+                        <circle cx="75" cy="85" r="24" fill="white" />
+                        <circle cx="125" cy="85" r="24" fill="white" />
+                        <circle cx="78" cy="85" r="10" fill="#1e1b4b" />
+                        <circle cx="122" cy="85" r="10" fill="#1e1b4b" />
+                        <polygon points="100,95 90,110 110,110" fill="#f97316" />
+                    </svg>
+                `;
+            }
+        }
+
+        function nextChallenge() {
+            playSound('tap');
+            currentChallengeIndex++;
+
+            if (currentChallengeIndex < totalChallenges) {
+                loadChallenge();
+            } else {
+                finishGame();
+            }
+        }
+
+        function updateScore() {
+            uiScore.innerText = score;
+        }
+
+        function finishGame() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / ${totalChallenges} ⭐`;
+            launchConfetti();
+        }
+
+        function resetGame() {
+            playSound('tap');
+            endScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
+
+        function launchConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            canvas.classList.remove('hidden');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 10 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 4 + 2,
+                    speedX: Math.random() * 2 - 1,
+                    rotation: Math.random() * 360,
+                    rotSpeed: Math.random() * 6 - 3
+                });
+            }
+
+            let animationFrame;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.rotation += p.rotSpeed;
+
+                    if (p.y < canvas.height) alive = true;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                if (alive) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    canvas.classList.add('hidden');
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+
+            render();
+        }
+    </script>
+</body>
+</html>
